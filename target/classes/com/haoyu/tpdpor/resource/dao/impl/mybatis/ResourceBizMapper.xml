@@ -1,0 +1,229 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.haoyu.tpdpor.resource.dao.impl.mybatis.ResourceBizMapper">
+	<resultMap id="countMap" type="com.haoyu.tpdpor.resource.entity.ResourceTypeCount">
+		<result column="TYPE" property="type" jdbcType="VARCHAR"/>
+		<result column="NUM" property="num" jdbcType="INTEGER" />
+	</resultMap>
+	
+	<resultMap id="ResourceResultMap" type="com.haoyu.tip.resource.entity.Resources">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="TITLE" property="title" jdbcType="VARCHAR" />
+		<result column="SUMMARY" property="summary" jdbcType="VARCHAR" />
+		<result column="TYPE" property="type" jdbcType="VARCHAR" />
+		<result column="STATE" property="state" jdbcType="VARCHAR" />
+		<result column="CREATE_TIME" property="createTime" jdbcType="INTEGER" />
+		<result column="CREATOR" property="creator.id" jdbcType="VARCHAR" />
+		<result column="REAL_NAME" property="creator.realName" jdbcType="VARCHAR" />	
+		<result column="AVATAR" property="creator.avatar" jdbcType="VARCHAR" />	
+		<result column="BELONG" property="belong" jdbcType="VARCHAR" />	
+		<result column="PRIVILEGE" property="privilege" jdbcType="VARCHAR" />	
+		
+		<result column="STAGE" property="resourceExtend.stage" jdbcType="VARCHAR" />
+		<result column="SUBJECT" property="resourceExtend.subject" jdbcType="VARCHAR" />
+		<result column="GRADE" property="resourceExtend.grade" jdbcType="VARCHAR"/>
+		<result column="TB_VERSION" property="resourceExtend.tbVersion" jdbcType="VARCHAR"/>
+		<result column="CHAPTER" property="resourceExtend.chapter" jdbcType="VARCHAR"/>
+		<result column="SECTION" property="resourceExtend.section" jdbcType="VARCHAR"/>
+		<result column="EXTEND_TYPE" property="resourceExtend.type" jdbcType="VARCHAR" />
+		<result column="AUTHOR" property="resourceExtend.author" jdbcType="VARCHAR" />
+		<result column="SOURCE" property="resourceExtend.source" jdbcType="VARCHAR" />
+		<result column="ISSUE_DATE" property="resourceExtend.issueDate" jdbcType="DATE"/>
+		<result column="B_INDEX" property="resourceExtend.bIndex" jdbcType="VARCHAR"/>
+		<result column="EVALUATE_RESULT" property="resourceExtend.evaluateResult" jdbcType="DECIMAL" />
+		<result column="PRICE" property="resourceExtend.price" jdbcType="DECIMAL" />
+		<result column="COVER_URL" property="resourceExtend.coverUrl" jdbcType="VARCHAR" />
+		
+		
+		<collection property="resourceRelations" ofType="com.haoyu.tip.resource.entity.ResourceRelation">
+	    	<id property="id" column="RESOURCE_RELATION_ID"/>
+	    	<result property="browseNum" column="BROWSE_NUM" jdbcType="INTEGER"/>
+	    	<result property="replyNum" column="REPLY_NUM" jdbcType="INTEGER" />
+	    	<result property="downloadNum" column="DOWNLOAD_NUM" jdbcType="INTEGER"/>
+	    	<result property="fileNum" column="FILE_NUM" jdbcType="DECIMAL"/>
+	    	<result property="supportNum" column="SUPPORT_NUM" jdbcType="DECIMAL" />
+	    	<result property="relation.id" column="RELATION_ID" jdbcType="VARCHAR" />	
+	    	<result property="relation.type" column="RELATION_TYPE"  jdbcType="VARCHAR" />	
+	    </collection>
+	    
+	    <collection property="fileInfos" ofType="com.haoyu.sip.file.entity.FileInfo">
+	    	<id column="FILE_INFO_ID" property="id" jdbcType="VARCHAR"></id>
+	    	<result column="FILE_INFO_NAME" property="fileName" jdbcType="VARCHAR"/>
+	    	<result column="FILE_INFO_URL" property="url" jdbcType="VARCHAR"/>
+	    	<result column="FILE_INFO_SIZE" property="fileSize" jdbcType="DECIMAL" />
+	    </collection>
+	</resultMap>
+	
+	<select id="countByType" parameterType="java.lang.String" resultType="int">
+		select count(ID) from RESOURCES
+		where IS_DELETED = 'N' and  type = #{type,jdbcType=VARCHAR}
+	</select>
+	
+	<select id="countByParameter" parameterType="map" resultType="int">
+		select count(ID) from RESOURCES R
+		where IS_DELETED = 'N'
+		<if test="followCreator != null and followCreator!=''">
+			and exists (select 1 from FOLLOW F where IS_DELETED = 'N' and FOLLOWED_ID = R.ID and CREATOR = #{followCreator})
+		</if>
+		<if test="creator!=null and creator!=''">
+			and R.CREATOR=#{creator,jdbcType=VARCHAR}
+		</if>
+		<if test="type !=null and type != ''">
+			and R.TYPE = #{type,jdbcType=VARCHAR}
+		</if>
+		<if test="applyUser != null and applyUser != ''">
+			and exists (select 1 from RESOURCE_APPLY_RECORD where IS_DELETED = 'N' and RESOURCE_ID = R.ID and USER_ID = #{applyUser})
+		</if>
+		<if test="applyUserOrFollowCreator != null and applyUserOrFollowCreator != ''">
+			and (exists (select 1 from RESOURCE_APPLY_RECORD where IS_DELETED = 'N' and RESOURCE_ID = R.ID and USER_ID = #{applyUserOrFollowCreator}) or exists (select 1 from FOLLOW F where IS_DELETED = 'N' and FOLLOWED_ID = R.ID and F.CREATOR = #{applyUserOrFollowCreator}))
+		</if>
+	</select>
+	
+	<select id="countCreatorByType" parameterType="java.lang.String" resultType="int">
+		select count(ID) from BASE_USER_VIEW
+		where ID in
+		(select CREATOR from RESOURCES where IS_DELETED = 'N' and type = #{type,jdbcType=VARCHAR})
+	</select>
+	
+	<select id="countMap" parameterType="map" resultMap="countMap">
+		select
+			RRN.TYPE TYPE,
+			count(R.ID) NUM
+		from
+			RESOURCES R
+		inner join RESOURCE_RELATION RRN on RRN.RESOURCE_ID = R.ID AND RRN.IS_DELETED = 'N'
+		where
+			R.IS_DELETED = 'N'
+		<if test="relationTypes != null and relationTypes.size > 0 ">
+		    and RRN.TYPE in
+			<foreach collection="relationTypes" open="(" close=")" separator="," item="item">
+				#{item}
+			</foreach>
+		</if>    
+		group by
+			RRN.TYPE
+	</select>
+	
+	<update id="updateResourceExtendEvaluateResult" parameterType="map">
+		update RESOURCE_EXTEND
+		set EVALUATE_RESULT = (select avg(EVALUATE_SCORE) from COMMENTS C where C.IS_DELETED = 'N' and C.RELATION_ID = #{resourceId,jdbcType=VARCHAR})
+		where RESOURCE_ID = #{resourceId,jdbcType=VARCHAR}
+	</update>
+	
+	<select id="selectResources" parameterType="map" resultMap="ResourceResultMap">
+		select
+			R.ID,
+			R.TITLE,
+			R.SUMMARY,
+			R.CREATOR,
+			R.TYPE,
+			R.CREATE_TIME,
+			R.BELONG,
+			R.PRIVILEGE,
+			RR.ID RESOURCE_RELATION_ID,
+			RR.RELATION_ID,
+			RR.BROWSE_NUM,
+			RR.DOWNLOAD_NUM,
+			RR.SUPPORT_NUM,
+			RR.FILE_NUM,
+			RR.TYPE RELATION_TYPE,
+			BUV.REAL_NAME,
+			RE.STAGE,
+			RE.SUBJECT,
+			RE.GRADE,
+			RE.TB_VERSION,
+			RE.CHAPTER,
+			RE.SECTION,
+			RE.TYPE EXTEND_TYPE,
+			RE.AUTHOR,RE.SOURCE,RE.ISSUE_DATE,RE.B_INDEX,RE.EVALUATE_RESULT,RE.PRICE,RE.COVER_URL
+		from
+			RESOURCES R
+		left join RESOURCE_RELATION RR on R.ID = RR.RESOURCE_ID and RR.IS_DELETED = 'N'
+		left join RESOURCE_EXTEND RE on R.ID = RE.RESOURCE_ID
+		left join BASE_USER_VIEW BUV on BUV.ID = R.CREATOR
+		where
+			R.IS_DELETED = 'N'
+		<if test="state!=null and state!=''">
+			and R.STATE=#{state,jdbcType=VARCHAR}
+		</if>
+		<if test="title!=null and title!=''">
+			and R.TITLE like '%${title}%'
+		</if>
+		<if test="relationType!=null and relationType!=''">
+			and RR.TYPE=#{relationType,jdbcType=VARCHAR}
+		</if>
+		<if test="subject !=null and subject != ''">
+			and RE.SUBJECT=#{subject}
+		</if>
+		<if test="stage != null and stage != ''">
+			and RE.STAGE=#{stage}
+		</if>
+		<if test="grade != null and grade != ''">
+			and RE.GRADE = #{grade}
+		</if>
+		<if test="resourceExtendType != null and resourceExtendType != ''">
+			and RE.TYPE = #{resourceExtendType,jdbcType=VARCHAR}			
+		</if>
+		<if test="version != null and version != ''">
+			and RE.TB_VERSION = #{version,jdbcType=VARCHAR}
+		</if>
+		<if test="section !=null and section != ''">
+			and RE.SECTION like concat(#{section,jdbcType=VARCHAR},'%')
+		</if>
+		<if test="bIndex != null and bIndex != ''">
+			and RE.B_INDEX like concat(#{bIndex,jdbcType=VARCHAR},'%')
+		</if>
+		<if test="relationTypes != null and relationTypes.size > 0">
+			and RR.TYPE in 
+			<foreach collection="relationTypes" open="(" close=")" item="item" separator=",">
+				#{item}
+			</foreach>
+		</if>
+		<if test="type!=null and type != ''">
+			and R.TYPE=#{type,jdbcType=VARCHAR}
+		</if>
+		<if test="creator!=null and creator!=''">
+			and R.CREATOR=#{creator,jdbcType=VARCHAR}
+		</if>
+		<if test="belong != null and belong != ''">
+			and R.BELONG=#{belong,jdbcType=VARCHAR}
+		</if>
+		<if test="notExistsRelationType != null and notExistsRelationType != '' and notExistsRelationId != null and notExistsRelationId != ''">
+			and not exists (select 1 from RESOURCE_RELATION where RESOURCE_ID = R.ID and IS_DELETED = 'N' and RELATION_ID = #{notExistsRelationId} and type = #{notExistsRelationType} )
+		</if>
+		<if test="ids != null">
+			and R.ID in 
+			<foreach collection="ids" open="(" close=")" separator="," item="id">
+				#{id,jdbcType=VARCHAR}
+			</foreach>
+		</if>
+		<if test="privilege != null and privilege != ''">
+			and R.PRIVILEGE=#{privilege,jdbcType=VARCHAR}
+		</if>
+		<if test="relationIds != null and relationIds.size > 0">
+			and exists (select 1 from RESOURCE_RELATION where RESOURCE_ID = R.ID
+			and RELATION_ID in 
+			<foreach collection="relationIds" open="(" close=")" item="item" separator=",">
+				#{item}
+			</foreach>)
+		</if>
+		<if test="relationId !=null and relationId != '' ">
+			and RR.RELATION_ID = #{relationId,jdbcType=VARCHAR}
+		</if>
+		<if test="followCreator != null and followCreator!=''">
+			and exists (select 1 from FOLLOW F where IS_DELETED = 'N' and FOLLOWED_ID = R.ID and CREATOR = #{followCreator})
+		</if>
+		<if test="creatorOrFollowCreator != null and creatorOrFollowCreator!=''">
+			and (R.CREATOR = #{creatorOrFollowCreator} or exists (select 1 from FOLLOW F where IS_DELETED = 'N' and FOLLOWED_ID = R.ID and F.CREATOR = #{creatorOrFollowCreator}))
+		</if>
+		<if test="applyUser != null and applyUser != ''">
+			and exists (select 1 from RESOURCE_APPLY_RECORD where IS_DELETED = 'N' and RESOURCE_ID = R.ID and USER_ID = #{applyUser})
+		</if>
+		<if test="applyUserOrFollowCreator != null and applyUserOrFollowCreator != ''">
+			and (exists (select 1 from RESOURCE_APPLY_RECORD where IS_DELETED = 'N' and RESOURCE_ID = R.ID and USER_ID = #{applyUserOrFollowCreator}) or exists (select 1 from FOLLOW F where IS_DELETED = 'N' and FOLLOWED_ID = R.ID and F.CREATOR = #{applyUserOrFollowCreator}))
+		</if>
+		<if test="subscribe != null and subscribe != ''">
+			and (exists (select 1 from FOLLOW F where F.CREATOR = #{subscribeCreator,jdbcType=VARCHAR}  and F.FOLLOWED_ID = R.CREATOR and exists(select 1 from EXPERT E where E.IS_DELETED = 'N' and E.USER_ID = F.FOLLOWED_ID) and F.FOLLOWED_TYPE = 'expert') or exists(select 1 from FOLLOW F where F.CREATOR = #{subscribeCreator,jdbcType=VARCHAR} and  F.FOLLOWED_ID = R.BELONG and exists(select 1 from DIVISION D where D.IS_DELETED = 'N' and D.ID = F.FOLLOWED_ID) and F.FOLLOWED_TYPE = 'division'))
+		</if>
+	</select>
+</mapper>

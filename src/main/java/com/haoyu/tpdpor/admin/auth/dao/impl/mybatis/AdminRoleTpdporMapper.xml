@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.haoyu.tpdpor.admin.auth.dao.impl.mybatis.AdminRoleTpdporMapper" >
+	<resultMap id="RoleResultMap" type="com.haoyu.sip.auth.entity.AuthRole" >
+	    <id column="ID" property="id" jdbcType="VARCHAR" />
+	    <result column="CODE" property="code" jdbcType="VARCHAR" />
+	    <result column="NAME" property="name" jdbcType="VARCHAR" />
+	    <result column="SUMMARY" property="summary" jdbcType="VARCHAR" />
+	    <result column="RELATION_ID" property="relationId" jdbcType="VARCHAR" />
+	    <result column="CREATE_TIME" property="createTime" jdbcType="BIGINT" />
+	</resultMap>
+  
+	<select id="selectByParameter" resultMap="RoleResultMap" parameterType="map" >
+   		select
+			R.ID,
+			R.NAME,
+			R.CODE,
+			R.RELATION_ID,
+			R.SUMMARY,
+			R.CREATE_TIME
+		from
+			AUTH_ROLE R
+		where
+			R.IS_DELETED = 'N'
+		<if test="code != null and code != ''">
+	    	and R.CODE = #{code,jdbcType=VARCHAR}
+	    </if>
+	</select>
+
+</mapper>

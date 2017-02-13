@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.haoyu.bookindex.dao.impl.mybatis.BookIndexMapper">
+	<resultMap id="BaseResultMap" type="com.haoyu.bookindex.entity.BookIndex">
+	<id column="ID" property="id" jdbcType="VARCHAR" />
+	<result column="NAME" property="name" jdbcType="VARCHAR"/>
+	<result column="B_INDEX" property="bIndex" jdbcType="VARCHAR" />
+	<result column="VALUE" property="value" jdbcType="VARCHAR"/>
+	<result column="PARENT_ID" property="parent.id" jdbcType="VARCHAR"/>
+	<result column="SORT_NO" property="sortNo" jdbcType="INTEGER"/>
+	<result column="CREATOR" property="creator.id" jdbcType="VARCHAR"/>
+	<result column="CREATE_TIME" property="createTime" jdbcType="VARCHAR"/>
+	</resultMap>
+	
+	<sql id="Base_Column_List">
+			BI.ID,BI.NAME,BI.B_INDEX,BI.VALUE,BI.PARENT_ID,BI.SORT_NO,BI.CREATE_TIME,BI.CREATOR
+	</sql>
+	
+	<select id="selectByPrimaryKey" resultMap="BaseResultMap" parameterType="java.lang.String">
+		select	<include refid="Base_Column_List" />
+		from BOOK_INDEX BI
+		where BI.IS_DELETED = 'N'
+		and BI.ID = #{id,jdbcType=VARCHAR}
+	</select>
+	
+	<select id="selectByParameter" parameterType="java.util.Map" resultMap="BaseResultMap">
+		select <include refid="Base_Column_List" />
+		from BOOK_INDEX BI
+		where BI.IS_DELETED = 'N'
+		<if test="bIndex != null and bIndex != ''">
+			and B_INDEX = #{bIndex,jdbcType=VARCHAR}
+		</if>
+	</select>
+	
+	<insert id="insert" parameterType="com.haoyu.bookindex.entity.BookIndex">
+		insert into BOOK_INDEX
+		<trim prefix="(" suffix=")" suffixOverrides=",">
+			<if test="id != null">ID,</if>
+			<if test="name != null">NAME,</if>
+			<if test="bIndex != null">B_INDEX,</if>
+			<if test="value != null">VALUE,</if>
+			<if test="parent != null and parent.id != null">PARENT_ID,</if>
+			<if test="sortNo != null">SORT_NO,</if>
+			<if test="creator != null and creator.id != null">CREATOR,</if>
+			<if test="createTime != null">CREATE_TIME,</if>
+			<if test="version != null">VERSION,</if>
+			<if test="isDeleted != null">IS_DELETED,</if>
+		</trim>
+		<trim prefix="values (" suffix=")" suffixOverrides=",">
+			<if test="id != null">#{id,jdbcType=VARCHAR},</if>
+			<if test="name != null">#{name,jdbcType=VARCHAR},</if>
+			<if test="bIndex != null">#{bIndex,jdbcType=VARCHAR},</if>
+			<if test="value != null">#{value,jdbcType=VARCHAR},</if>
+			<if test="parent != null and parent.id != null">#{parent.id,jdbcType=VARCHAR},</if>
+			<if test="sortNo != null">#{sortNo,jdbcType=INTEGER},</if>
+			<if test="creator != null and creator.id != null">#{creator.id,jdbcType=VARCHAR},</if>
+			<if test="createTime != null">#{createTime,jdbcType=VARCHAR},</if>
+			<if test="version != null">#{version,jdbcType=DECIMAL},</if>
+			<if test="isDeleted != null">#{isDeleted,jdbcType=VARCHAR},</if>
+		</trim>
+	</insert>
+	<update id="updateByPrimaryKey" parameterType="com.haoyu.bookindex.entity.BookIndex">
+		update BOOK_INDEX
+		<set>
+			<if test="name != null">
+				NAME = #{name,jdbcType=VARCHAR},
+			</if>
+			<if test="bIndex != null">
+				B_INDEX = #{bIndex,jdbcType=VARCHAR},
+			</if>
+			<if test="parent != null and parent.id != null">
+				PARENT_ID = #{parent.id,jdbcType=VARCHAR},
+			</if>
+			<if test="sortNo != null">
+				SORT_NO = #{sortNo,jdbcType=VARCHAR},
+			</if>
+			<if test="value != null">
+				VALUE = #{value,jdbcType=VARCHAR},
+			</if>
+			<if test="updatedby != null and updatedby.id  != null">
+				UPDATEDBY = #{updatedby.id,jdbcType=VARCHAR},
+			</if>
+			<if test="updateTime  != null">
+				UPDATE_TIME = #{updateTime,jdbcType=DECIMAL},
+			</if>
+			VERSION = VERSION+1
+		</set>
+		where ID  = #{id,jdbcType=VARCHAR}
+	
+	</update>
+	<update id="deleteByLogic" parameterType="com.haoyu.bookindex.entity.BookIndex">
+		update BOOK_INDEX 
+		set IS_DELETED = 'Y'
+		where ID  = #{id,jdbcType=VARCHAR}
+	</update>
+	
+	<update id="deleteLogicByIds" parameterType="java.util.List">
+		update BOOK_INDEX 
+		set IS_DELETED = 'Y'
+		where ID in 
+		<foreach collection="list" open="(" close=")" separator="," item="item">
+			#{item,jdbcType=VARCHAR}
+		</foreach>
+	</update>
+	
+	<update id="updateIndexByParent" parameterType="map">
+		update BOOK_INDEX 
+		set B_INDEX = concat(#{parentIndex,jdbcType=VARCHAR},VALUE)
+		where PARENT_ID in
+		<foreach collection="ids" open="(" close=")" separator="," item="item">
+			#{item,jdbcType=VARCHAR}
+		</foreach>
+	</update>
+</mapper>

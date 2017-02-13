@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.haoyu.division.dao.impl.mybatis.DivisionMapper">
+	<resultMap id="BaseResultMap" type="com.haoyu.division.entity.Division">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="NAME" property="name" jdbcType="VARCHAR"/>
+		<result column="SUMMARY" property="summary" jdbcType="VARCHAR"/>
+		<result column="CREATOR" property="creator.id" jdbcType="VARCHAR"/>
+		<result column="CREATE_TIME" property="createTime" jdbcType="VARCHAR"/>
+		<result column="IMAGE_URL" property="imageUrl" jdbcType="VARCHAR"/>
+		<result column="PHONE" property="phone" jdbcType="VARCHAR"/>
+		<result column="EMAIL" property="email" jdbcType="VARCHAR"/>
+	</resultMap>
+	
+	<sql id="Base_Column_List">
+		D.ID,D.NAME,D.SUMMARY,D.CREATE_TIME,D.CREATOR,D.IMAGE_URL,D.PHONE,D.EMAIL
+	</sql>
+	
+	<select id="selectByPrimaryKey" resultMap="BaseResultMap" parameterType="java.lang.String">
+		select	<include refid="Base_Column_List" />
+		from DIVISION D
+		where D.IS_DELETED = 'N'
+		and D.ID = #{id,jdbcType=VARCHAR}
+	</select>
+	
+	<select id="selectByParameter" parameterType="java.util.Map" resultMap="BaseResultMap">
+		select <include refid="Base_Column_List" />
+		from 
+			DIVISION D
+		where 
+			D.IS_DELETED = 'N'
+			<if test="name != null and name != '' ">
+			    and D.NAME like '%${name}%'
+		    </if>
+		    <if test="ids != null and ids.size > 0 ">
+		    	and D.ID in 
+			<foreach collection="ids" item="item" open="(" close=")" separator=",">
+				#{item,jdbcType=VARCHAR}
+			</foreach>
+		</if>
+	</select>
+	
+	<insert id="insert" parameterType="com.haoyu.division.entity.Division">
+		insert into DIVISION
+		<trim prefix="(" suffix=")" suffixOverrides=",">
+			<if test="id != null">ID,</if>
+			<if test="name != null">NAME,</if>
+			<if test="summary != null">SUMMARY,</if>
+			<if test="creator != null and creator.id != null">CREATOR,</if>
+			<if test="createTime != null">CREATE_TIME,</if>
+			<if test="version != null">VERSION,</if>
+			<if test="isDeleted != null">IS_DELETED,</if>
+			<if test="phone != null">PHONE,</if>
+			<if test="email != null">EMAIL,</if>
+		</trim>
+		<trim prefix="values (" suffix=")" suffixOverrides=",">
+			<if test="id != null">#{id,jdbcType=VARCHAR},</if>
+			<if test="name != null">#{name,jdbcType=VARCHAR},</if>
+			<if test="summary != null">#{summary,jdbcType=VARCHAR},</if>
+			<if test="creator != null and creator.id != null">#{creator.id,jdbcType=VARCHAR},</if>
+			<if test="createTime != null">#{createTime,jdbcType=VARCHAR},</if>
+			<if test="version != null">#{version,jdbcType=DECIMAL},</if>
+			<if test="isDeleted != null">#{isDeleted,jdbcType=VARCHAR},</if>
+			<if test="phone != null">#{phone,jdbcType=VARCHAR},</if>
+			<if test="email != null">#{email,jdbcType=VARCHAR},</if>
+		</trim>
+	</insert>
+	
+	<update id="updateByPrimaryKey" parameterType="com.haoyu.division.entity.Division">
+	    update DIVISION
+	    <set>
+	    	<if test="name != null">NAME = #{name,jdbcType=VARCHAR},</if>
+			<if test="summary != null">SUMMARY = #{summary,jdbcType=VARCHAR},</if>
+			<if test="updatedby != null and updatedby.id != null and updatedby.id != ''">UPDATEDBY = #{updatedby.id,jdbcType=VARCHAR},</if>
+			<if test="phone != null">PHONE = #{phone,jdbcType=VARCHAR},</if>
+			<if test="email != null">EMAIL = #{email,jdbcType=VARCHAR},</if>
+			<if test="imageUrl != null">IMAGE_URL = #{imageUrl,jdbcType=VARCHAR},</if>
+			VERSION = VERSION + 1,
+        </set>
+        where ID = #{id,jdbcType=VARCHAR}
+	</update>
+	
+	<update id="deleteByLogic" parameterType="com.haoyu.division.entity.Division">
+	    update DIVISION
+		set IS_DELETED = 'Y', UPDATE_TIME = #{updateTime,jdbcType=DECIMAL}
+		<if test="updatedby != null and updatedby.id != null and updatedby.id != ''">
+			,UPDATEDBY = #{updatedby.id,jdbcType=VARCHAR}
+		</if>
+		,VERSION = VERSION + 1
+		where ID = #{id,jdbcType=VARCHAR}
+	</update>
+	
+</mapper>

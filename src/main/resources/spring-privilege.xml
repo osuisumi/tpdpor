@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:context="http://www.springframework.org/schema/context" xsi:schemaLocation="
+http://www.springframework.org/schema/beans
+http://www.springframework.org/schema/beans/spring-beans-3.2.xsd
+http://www.springframework.org/schema/context
+http://www.springframework.org/schema/context/spring-context-3.2.xsd
+">
+	<bean id="shiroUserService" class="com.haoyu.tpdpor.shiro.service.imple.ShiroUserServiceImpl" >
+		<property name="shiroUserDao" ref="shiroUserDao" />
+	</bean>
+	<bean id="shiroUserDao" class="com.haoyu.tpdpor.shiro.dao.impl.mybatis.ShiroUserDao" parent="myBatisDao" />
+	<bean id="securityManager" class="org.apache.shiro.web.mgt.DefaultWebSecurityManager">
+		<property name="realm" ref="authRealm" />
+		<property name="cacheManager" ref="shiroRedisManager" />
+	</bean>
+    <bean id="authRealm" class="com.haoyu.sip.auth.realm.DefaultAuthRealm">
+		<property name="authRealmHandlers">
+			<list>
+			    <bean class="com.haoyu.tpdpor.shiro.handler.AuthRealmHandler" />
+			    <bean class="com.haoyu.tpdpor.shiro.handler.CreativeHandler" />
+			</list>
+		</property>
+	</bean>  
+    <bean id="shiroFilter" class="org.apache.shiro.spring.web.ShiroFilterFactoryBean">
+		<property name="securityManager" ref="securityManager" />
+		<property name="loginUrl" value="/tpdpor/login" />
+		<property name="successUrl" value="/entrance" />
+		<property name="unauthorizedUrl" value="/error/403.html" />
+		<property name="filterChainDefinitions">
+			<value>
+				<!-- /logout = logout
+				/admin/** = authc,cu
+				/userCenter/** = authc,cu
+				/** = cu
+				 -->
+			</value>
+		</property>
+		<!-- <property name="filterChainDefinitionMap" ref="chainDefinitionSectionMetaSource" /> -->
+		<property name="filters">
+			<map>
+				<entry key="logout" value-ref="logoutFilter" />
+				<entry key="cu" value-ref="currentUserFilter" />
+			</map>
+		</property>
+	</bean>
+    <bean id="currentUserFilter" class="com.haoyu.sip.auth.filter.CurrentUserFilter"/>
+	<bean id="logoutFilter" class="org.apache.shiro.web.filter.authc.LogoutFilter">
+		<property name="redirectUrl" value="/tpdpor/login" />
+	</bean>
+    
+    <bean id="lifecycleBeanPostProcessor" class="org.apache.shiro.spring.LifecycleBeanPostProcessor"/>  
+      
+    <bean class="org.apache.shiro.spring.security.interceptor.AuthorizationAttributeSourceAdvisor">
+		<property name="securityManager" ref="securityManager" />
+	</bean>
+    
+	<bean id="redisManager" class="org.crazycake.shiro.RedisManager">
+		<property name="host" value="${redis.host}" />
+		<property name="port" value="${redis.port}" />
+		<property name="expire" value="1800" />
+		<!-- optional properties: <property name="timeout" value="10000"/> <property name="password" value="123456"/> -->
+	</bean>
+
+	<!-- sessionManager -->
+	<!-- <bean id="sessionManager" class="org.apache.shiro.web.session.mgt.DefaultWebSessionManager"> <property name="sessionDAO" ref="redisSessionDAO" /> </bean> -->
+
+	<!-- cacheManager -->
+	<bean id="shiroRedisManager" class="org.crazycake.shiro.RedisCacheManager">
+		<property name="redisManager" ref="redisManager" />
+	</bean>
+</beans>

@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.haoyu.tpdpor.usercenter.trainresource.dao.impl.mybatis.UCTrainResourceMapper">
+	<resultMap id="BaseResultMap" type="com.haoyu.tpdpor.trainresource.entity.TrainResource">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="TRAIN_ID" property="train.id" jdbcType="VARCHAR" />
+		<result column="TRAIN_NAME" property="train.name" jdbcType="VARCHAR" />
+		<result column="TRAIN_CREATOR_REALNAME" property="train.creator.realName" jdbcType="VARCHAR" />
+		
+		<result column="PROJECT_ID" property="train.project.id" jdbcType="VARCHAR" />
+		<result column="PROJECT_NAME" property="train.project.name" jdbcType="VARCHAR" />
+		
+		<result column="RESOURCE_ID" property="resource.id" jdbcType="VARCHAR" />	
+		<result column="RESOURCE_TITLE" property="resource.title" jdbcType="VARCHAR" />
+		<result column="RESOURCE_SUMMARY" property="resource.summary" jdbcType="VARCHAR" />
+		<result column="RESOURCE_TYPE" property="resource.type" jdbcType="VARCHAR" />
+		<result column="RESOURCE_STATE" property="resource.state" jdbcType="VARCHAR" />
+		<result column="RESOURCE_CREATE_TIME" property="resource.createTime" jdbcType="INTEGER" />
+		<result column="RESOURCE_CREATOR" property="resource.creator.id" jdbcType="VARCHAR" />
+		<result column="RESOURCE_CREATOR_REALNAME" property="resource.creator.realName" jdbcType="VARCHAR" />	
+		<result column="RESOURCE_AVATAR" property="resource.creator.avatar" jdbcType="VARCHAR" />	
+		<result column="EVALUATE_RESULT" property="resource.resourceExtend.evaluateResult" jdbcType="VARCHAR" />	
+		<result column="RESOURCE_COVER_URL" property="resource.resourceExtend.coverUrl" jdbcType="VARCHAR" />
+		<result column="RESOURCE_TOPIC" property="resource.resourceExtend.topic" jdbcType="VARCHAR" />
+		<result column="RESOURCE_POST" property="resource.resourceExtend.post" jdbcType="VARCHAR" />
+		
+		<result column="PARTICIPATE_NUM" property="participateNum" jdbcType="INTEGER" />
+	</resultMap>
+	
+	<select id="selectByParameter" resultMap="BaseResultMap" parameterType="java.util.Map">
+		select
+	    	T.ID ID,
+			T.ID TRAIN_ID,
+			R.ID RESOURCE_ID,
+			R.TITLE RESOURCE_TITLE,
+			BUV.REAL_NAME RESOURCE_CREATOR_REALNAME,
+			P.NAME PROJECT_NAME,
+			R.TYPE RESOURCE_TYPE,
+			R.CREATE_TIME 
+		from
+			RESOURCES R
+		inner join RESOURCE_RELATION RRN on RRN.IS_DELETED = 'N' and RRN.RESOURCE_ID = R.ID
+		inner join TRAIN T on T.IS_DELETED = 'N' and T.ID = RRN.RELATION_ID
+		left join PROJECT P on P.ID = T.PROJECT_ID and P.IS_DELETED = 'N'
+		inner join BASE_USER_VIEW BUV on BUV.ID = R.CREATOR
+		where 
+			R.IS_DELETED = 'N'
+		<if test="followCreator != null and followCreator != '' ">
+			and exists (select 1 from FOLLOW F where F.IS_DELETED = 'N' and F.FOLLOWED_ID = R.ID and F.CREATOR = #{followCreator,jdbcType=VARCHAR})
+		</if>
+		<if test="creator != null and creator != '' ">
+			and R.CREATOR=#{creator,jdbcType=VARCHAR}
+		</if>
+		<if test="ayylyUserId != null and ayylyUserId != '' ">
+			and exists (select 1 from RESOURCE_APPLY_RECORD RAD where RAD.IS_DELETED = 'N' and RAD.RESOURCE_ID = R.ID and RAD.USER_ID = #{ayylyUserId,jdbcType=VARCHAR})
+		</if>
+		<if test="creatorOrFollowCreatorOrAyylyUserId != null and creatorOrFollowCreatorOrAyylyUserId != '' ">
+			and (R.CREATOR = #{creatorOrFollowCreatorOrAyylyUserId,jdbcType=VARCHAR} 
+			or exists (select 1 from FOLLOW F where F.IS_DELETED = 'N' and F.FOLLOWED_ID = R.ID and F.CREATOR = #{creatorOrFollowCreatorOrAyylyUserId,jdbcType=VARCHAR}))
+			or exists (select 1 from RESOURCE_APPLY_RECORD RAD where RAD.IS_DELETED = 'N' and RAD.RESOURCE_ID = R.ID and RAD.USER_ID = #{creatorOrFollowCreatorOrAyylyUserId,jdbcType=VARCHAR})
+		</if>
+	</select>
+	
+	<select id="getCount" resultType="int" parameterType="map">
+		select
+			count(1)
+		from
+			RESOURCES R
+		inner join RESOURCE_RELATION RRN on RRN.IS_DELETED = 'N' and RRN.RESOURCE_ID = R.ID
+		inner join TRAIN T on T.IS_DELETED = 'N' and T.ID = RRN.RELATION_ID
+		where
+			R.IS_DELETED = 'N'
+		<if test="followCreator != null and followCreator != '' ">
+			and exists (select 1 from FOLLOW F where F.IS_DELETED = 'N' and F.FOLLOWED_ID = R.ID and F.CREATOR = #{followCreator,jdbcType=VARCHAR})
+		</if>
+		<if test="ayylyUserId != null and ayylyUserId != '' ">
+			and exists (select 1 from RESOURCE_APPLY_RECORD RAD where RAD.IS_DELETED = 'N' and RAD.RESOURCE_ID = R.ID and RAD.USER_ID = #{ayylyUserId,jdbcType=VARCHAR})
+		</if>
+		<if test="creator != null and creator != '' ">
+			and R.CREATOR=#{creator,jdbcType=VARCHAR}
+		</if>
+		<if test="creatorOrFollowCreatorOrAyylyUserId != null and creatorOrFollowCreatorOrAyylyUserId != '' ">
+			and (R.CREATOR = #{creatorOrFollowCreatorOrAyylyUserId,jdbcType=VARCHAR} 
+			or exists (select 1 from FOLLOW F where F.IS_DELETED = 'N' and F.FOLLOWED_ID = R.ID and F.CREATOR = #{creatorOrFollowCreatorOrAyylyUserId,jdbcType=VARCHAR}))
+			or exists (select 1 from RESOURCE_APPLY_RECORD RAD where RAD.IS_DELETED = 'N' and RAD.RESOURCE_ID = R.ID and RAD.USER_ID = #{creatorOrFollowCreatorOrAyylyUserId,jdbcType=VARCHAR})
+		</if>	
+	</select>
+	
+</mapper>

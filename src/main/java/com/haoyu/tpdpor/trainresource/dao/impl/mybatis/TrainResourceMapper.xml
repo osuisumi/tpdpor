@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.haoyu.tpdpor.trainresource.dao.impl.mybatis.TrainResourceMapper">
+	<resultMap id="BaseResultMap" type="com.haoyu.tpdpor.trainresource.entity.TrainResource">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="TRAIN_ID" property="train.id" jdbcType="VARCHAR" />
+		<result column="TRAIN_NAME" property="train.name" jdbcType="VARCHAR" />
+		<result column="TRAIN_CREATOR_REALNAME" property="train.creator.realName" jdbcType="VARCHAR" />
+		
+		<result column="PROJECT_ID" property="train.project.id" jdbcType="VARCHAR" />
+		<result column="PROJECT_NAME" property="train.project.name" jdbcType="VARCHAR" />
+		
+		<result column="RESOURCE_ID" property="resource.id" jdbcType="VARCHAR" />	
+		<result column="RESOURCE_TITLE" property="resource.title" jdbcType="VARCHAR" />
+		<result column="RESOURCE_SUMMARY" property="resource.summary" jdbcType="VARCHAR" />
+		<result column="RESOURCE_TYPE" property="resource.type" jdbcType="VARCHAR" />
+		<result column="RESOURCE_STATE" property="resource.state" jdbcType="VARCHAR" />
+		<result column="RESOURCE_CREATE_TIME" property="resource.createTime" jdbcType="INTEGER" />
+		<result column="RESOURCE_CREATOR" property="resource.creator.id" jdbcType="VARCHAR" />
+		<result column="RESOURCE_CREATOR_REALNAME" property="resource.creator.realName" jdbcType="VARCHAR" />	
+		<result column="RESOURCE_AVATAR" property="resource.creator.avatar" jdbcType="VARCHAR" />	
+		<result column="EVALUATE_RESULT" property="resource.resourceExtend.evaluateResult" jdbcType="VARCHAR" />	
+		<result column="RESOURCE_COVER_URL" property="resource.resourceExtend.coverUrl" jdbcType="VARCHAR" />
+		<result column="RESOURCE_TOPIC" property="resource.resourceExtend.topic" jdbcType="VARCHAR" />
+		<result column="RESOURCE_POST" property="resource.resourceExtend.post" jdbcType="VARCHAR" />
+		<result column="RESOURCE_STAGE" property="resource.resourceExtend.stage" jdbcType="VARCHAR" />
+		<result column="RESOURCE_SUBJECT" property="resource.resourceExtend.subject" jdbcType="VARCHAR" />
+		<result column="RESOURCE_GRADE" property="resource.resourceExtend.grade" jdbcType="VARCHAR" />
+		<result column="RESOURCE_BELONG" property="resource.belong" jdbcType="VARCHAR" />
+		<result column="RESOURCE_PRIVILEGE" property="resource.privilege" jdbcType="VARCHAR" />
+				
+		<result column="PARTICIPATE_NUM" property="participateNum" jdbcType="INTEGER" />
+		
+		<result column="DIVISION_NAME" property="division.name" jdbcType="VARCHAR" />
+	</resultMap>
+	
+	<select id="selectByParameter" resultMap="BaseResultMap" parameterType="java.util.Map">
+		select
+			R.ID ID,
+			T.ID TRAIN_ID,
+			R.ID RESOURCE_ID,
+			T.NAME TRAIN_NAME,
+			R.TITLE RESOURCE_TITLE,
+			R.SUMMARY RESOURCE_SUMMARY,
+			(
+				select
+					count(1)
+				from
+					RESOURCE_APPLY_RECORD RARD 
+				where
+					RARD.IS_DELETED = 'N' and RARD.RESOURCE_ID = R.ID
+			) PARTICIPATE_NUM,
+			R.CREATE_TIME RESOURCE_CREATE_TIME,
+			T.CREATE_TIME CREATE_TIME,
+			RED.EVALUATE_RESULT EVALUATE_RESULT,
+			RRN.DOWNLOAD_NUM DOWNLOAD_NUM,
+			P.NAME PROJECT_NAME,
+			R.TYPE RESOURCE_TYPE,
+			R.PRIVILEGE RESOURCE_PRIVILEGE,
+			BUV.REAL_NAME TRAIN_CREATOR_REALNAME,
+			BUV1.REAL_NAME RESOURCE_CREATOR_REALNAME,
+			RED.COVER_URL RESOURCE_COVER_URL,
+			D.NAME DIVISION_NAME
+		from
+			TRAIN T
+		left join PROJECT P on P.ID = T.PROJECT_ID and P.IS_DELETED = 'N'
+		inner join RESOURCE_RELATION RRN on T.ID = RRN.RELATION_ID and RRN.IS_DELETED = 'N'
+		inner join RESOURCES R on R.ID = RRN.RESOURCE_ID and R.IS_DELETED = 'N'
+		inner join RESOURCE_EXTEND RED on RED.RESOURCE_ID = R.ID
+		left join BASE_USER_VIEW BUV on BUV.ID = T.CREATOR
+		left join BASE_USER_VIEW BUV1 on BUV1.ID = R.CREATOR 
+		left join DIVISION D on D.ID = R.BELONG and D.IS_DELETED = 'N'
+		where
+			T.IS_DELETED = 'N'
+		<if test="resourceRelationId != null and resourceRelationId != ''">
+		    and RRN.RELATION_ID = #{resourceRelationId,jdbcType=VARCHAR} 
+		</if>
+		<if test="resourceRelationType != null and resourceRelationType != ''">
+		    and RRN.TYPE = #{resourceRelationType,jdbcType=VARCHAR} 
+		</if>
+		<if test="type != null and type != ''">
+		    and R.TYPE = #{type,jdbcType=VARCHAR} 
+		</if>
+		<if test="stage != null and stage != ''">
+		    and RED.STAGE = #{stage,jdbcType=VARCHAR} 
+		</if>
+		<if test="subject != null and subject != ''">
+		    and RED.SUBJECT = #{subject,jdbcType=VARCHAR} 
+		</if>
+		<if test="post != null and post != ''">
+		    and RED.POST = #{post,jdbcType=VARCHAR} 
+		</if>
+		<if test="topic != null and topic != ''">
+		    and RED.TOPIC = #{topic,jdbcType=VARCHAR} 
+		</if>
+		<if test="title != null and title != ''">
+		    and R.TITLE like '%${title}%'
+		</if>
+		<if test="belongs != null and belongs.size > 0 ">
+		    and R.BELONG in
+			<foreach collection="belongs" open="(" close=")" item="item" separator=",">
+		  		#{item,jdbcType=VARCHAR}  	
+		  	</foreach>
+		</if>
+		<if test="belong != null and belong != ''">
+		    and R.BELONG = #{belong,jdbcType=VARCHAR}
+		</if>
+	</select>
+	
+	<select id="selectByPrimaryKey" resultMap="BaseResultMap" parameterType="java.lang.String">
+		select
+			R.ID ID,
+			T.ID TRAIN_ID,
+			R.ID RESOURCE_ID,
+			R.TYPE RESOURCE_TYPE,
+			T.NAME TRAIN_NAME,
+			R.TITLE RESOURCE_TITLE,
+			R.SUMMARY RESOURCE_SUMMARY,
+			(
+				select
+					count(1)
+				from
+					RESOURCE_APPLY_RECORD RARD 
+				where
+					RARD.IS_DELETED = 'N' and RARD.RESOURCE_ID = R.ID
+			) PARTICIPATE_NUM,
+			R.CREATE_TIME RESOURCE_CREATE_TIME,
+			R.PRIVILEGE RESOURCE_PRIVILEGE,
+			RED.EVALUATE_RESULT EVALUATE_RESULT,
+			RRN.DOWNLOAD_NUM DOWNLOAD_NUM,
+			P.ID PROJECT_ID,
+			RED.POST RESOURCE_POST,
+			RED.TOPIC RESOURCE_TOPIC,
+			RED.SUBJECT RESOURCE_SUBJECT,
+			RED.STAGE RESOURCE_STAGE,
+			RED.GRADE RESOURCE_GRADE,
+			BUV.REAL_NAME RESOURCE_CREATOR_REALNAME,
+			BUV.ID RESOURCE_CREATOR
+		from
+			TRAIN T
+		left join PROJECT P on P.ID = T.PROJECT_ID and P.IS_DELETED = 'N'
+		left join RESOURCE_RELATION RRN on T.ID = RRN.RELATION_ID and RRN.IS_DELETED = 'N'
+		inner join RESOURCES R on R.ID = RRN.RESOURCE_ID and R.IS_DELETED = 'N'
+		left join RESOURCE_EXTEND RED on RED.RESOURCE_ID = R.ID
+		left join BASE_USER_VIEW BUV on BUV.ID = R.CREATOR 
+		where
+			T.IS_DELETED = 'N' and R.ID = #{id,jdbcType=VARCHAR}  
+	</select>  
+	
+	<update id="batchDelete" parameterType="map">
+	    update
+			RESOURCES  
+		set 
+			IS_DELETED = 'Y', 
+			UPDATE_TIME = #{updateTime,jdbcType=DECIMAL}
+			<if test="updatedbyId != null and updatedbyId != ''">
+				,UPDATEDBY = #{updatedby.id,jdbcType=VARCHAR}
+			</if>
+			,VERSION = VERSION + 1
+			<if test="ids != null and ids.size > 0">
+		    	where ID in
+				<foreach collection="ids" open="(" close=")" item="id" separator=",">
+			  		#{id,jdbcType=VARCHAR}  	
+			  	</foreach>
+			</if>
+	</update>
+	
+	<select id="applyNumByParameter" parameterType="map" resultType="int">
+	    select
+			count(1)
+		from
+			RESOURCE_APPLY_RECORD RAD
+		inner join RESOURCES R on R.IS_DELETED = 'N' and R.ID = RAD.RESOURCE_ID
+			<if test="belongs != null and belongs.size > 0" >
+				and R.BELONG in
+				<foreach collection="belongs" open="(" close=")" item="item" separator=",">
+			  		#{item,jdbcType=VARCHAR}  	
+			  	</foreach>
+			</if>
+		where
+			RAD.IS_DELETED = 'N'
+			<if test="userId != null and userId != ''">
+				and RAD.USER_ID = #{userId,jdbcType=VARCHAR}
+			</if>
+			<if test="applyState != null and applyState != ''">
+				and APPLY_STATE = #{applyState,jdbcType=VARCHAR}
+			</if>
+	</select>
+	
+</mapper>

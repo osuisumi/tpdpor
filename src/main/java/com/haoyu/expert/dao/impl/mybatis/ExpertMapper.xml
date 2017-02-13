@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.haoyu.expert.dao.impl.mybatis.ExpertMapper">
+    
+	<resultMap id="BaseResultMap" type="com.haoyu.expert.entity.Expert">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		
+		<result column="USER_ID" property="user.id" jdbcType="VARCHAR"/>
+		<result column="USER_REAL_NAME" property="user.realName" jdbcType="VARCHAR"/>
+		<result column="USER_SEX" property="user.sex" jdbcType="VARCHAR"/>
+		<result column="USER_PAPERWORK_NO" property="user.paperworkNo" jdbcType="VARCHAR"/>
+		<result column="USER_PHONE" property="user.phone" jdbcType="VARCHAR"/>
+		<result column="USER_EMAIL" property="user.email" jdbcType="VARCHAR"/>
+		
+		<result column="DEPARTMENT_NAME" property="user.department.deptName" jdbcType="VARCHAR"/>
+		<result column="DEPARTMENT_ID" property="user.department.id" jdbcType="VARCHAR"/>
+		
+		<result column="ACCOUNT_USER_NAME" property="account.userName" jdbcType="VARCHAR"/>
+		<result column="ACCOUNT_ID" property="account.id" jdbcType="VARCHAR"/>
+		
+		<result column="POSITION" property="position" jdbcType="VARCHAR"/>
+		<result column="SPECIALTY" property="specialty" jdbcType="VARCHAR"/>
+		<result column="PROFESSIONAL_TITLE" property="professionalTitle" jdbcType="VARCHAR"/>
+		<result column="RESEARCH_RESULT" property="researchResult" jdbcType="VARCHAR"/>
+		<result column="TRAIN_EXPERIENCE" property="trainExperience" jdbcType="VARCHAR"/>
+		<result column="CONTRIBUTE_RESOURCE" property="contributeResource" jdbcType="VARCHAR"/>
+		<result column="CREATOR" property="creator.id" jdbcType="VARCHAR"/>
+		<result column="CREATE_TIME" property="createTime" jdbcType="INTEGER"/>
+	</resultMap>
+	
+	<select id="selectByPrimaryKey" resultMap="BaseResultMap" parameterType="java.lang.String">
+		select
+			E.ID,
+			E.USER_ID,
+			E.POSITION,
+			E.SPECIALTY,
+			E.PROFESSIONAL_TITLE,
+			E.RESEARCH_RESULT,
+			E.TRAIN_EXPERIENCE,
+			E.CONTRIBUTE_RESOURCE,
+			E.CREATE_TIME,
+			E.CREATOR,
+			UI.REAL_NAME USER_REAL_NAME,
+			UI.SEX USER_SEX,
+			UI.PAPERWORK_NO USER_PAPERWORK_NO,
+			UI.PHONE USER_PHONE,
+			UI.EMAIL USER_EMAIL,
+			D.DEPT_NAME DEPARTMENT_NAME,
+			D.ID DEPARTMENT_ID,
+			A.USER_NAME ACCOUNT_USER_NAME,
+			A.ID ACCOUNT_ID
+		from 
+			EXPERT E
+		inner join USER_INFO UI ON UI.ID = E.USER_ID and UI.IS_DELETED = 'N'
+		inner join ACCOUNT A on A.USER_ID = E.USER_ID and A.IS_DELETED = 'N'
+		left join USER_DEPT UD on UD.USER_ID = E.USER_ID
+		left join DEPARTMENT D on D.ID = UD.DEPT_ID and D.IS_DELETED = 'N'
+		where 
+			E.IS_DELETED = 'N'
+			and E.ID = #{id,jdbcType=VARCHAR}
+	</select>
+	
+	<select id="selectByParameter" parameterType="java.util.Map" resultMap="BaseResultMap">
+		select
+			E.ID,
+			E.USER_ID,
+			E.POSITION,
+			E.SPECIALTY,
+			E.PROFESSIONAL_TITLE,
+			E.RESEARCH_RESULT,
+			E.TRAIN_EXPERIENCE,
+			E.CONTRIBUTE_RESOURCE,
+			E.CREATE_TIME,
+			E.CREATOR,
+			UI.REAL_NAME USER_REAL_NAME,
+			UI.SEX USER_SEX,
+			D.DEPT_NAME DEPARTMENT_NAME,
+			A.USER_NAME ACCOUNT_USER_NAME
+		from
+			EXPERT E
+		inner join USER_INFO UI ON UI.ID = E.USER_ID and UI.IS_DELETED = 'N'
+		inner join ACCOUNT A on A.USER_ID = E.USER_ID and A.IS_DELETED = 'N'
+		left join USER_DEPT UD on UD.USER_ID = E.USER_ID
+		left join DEPARTMENT D on D.ID = UD.DEPT_ID and D.IS_DELETED = 'N'
+		where
+			E.IS_DELETED = 'N'
+		<if test="userId != null and userId != ''">
+		    and E.USER_ID = #{userId,jdbcType=VARCHAR}
+		</if>	
+		<if test="realName != null and realName != ''">
+		    and UI.REAL_NAME like '%${realName}%'
+		</if>
+		<if test="deptName != null and deptName != ''">
+		    and D.DEPT_NAME like '%${deptName}%'
+		</if>
+	</select>
+	
+	<insert id="insert" parameterType="com.haoyu.expert.entity.Expert">
+		insert into EXPERT
+		<trim prefix="(" suffix=")" suffixOverrides=",">
+			<if test="id != null">ID,</if>
+			<if test="user != null and user.id != null and user.id != ''">USER_ID,</if>
+			<if test="position != null">POSITION,</if>
+			<if test="specialty != null">SPECIALTY,</if>
+			<if test="professionalTitle != null">PROFESSIONAL_TITLE,</if>
+			<if test="researchResult != null">RESEARCH_RESULT,</if>
+			<if test="trainExperience != null">TRAIN_EXPERIENCE,</if>
+			<if test="contributeResource != null">CONTRIBUTE_RESOURCE,</if>
+			<if test="creator != null and creator.id != null">CREATOR,</if>
+			<if test="createTime != null">CREATE_TIME,</if>
+			<if test="version != null">VERSION,</if>
+			<if test="isDeleted != null">IS_DELETED,</if>
+		</trim>
+		<trim prefix="values (" suffix=")" suffixOverrides=",">
+			<if test="id != null">#{id,jdbcType=VARCHAR},</if>
+			<if test="user != null and user.id != null and user.id != ''">#{user.id,jdbcType=VARCHAR},</if>
+			<if test="position != null">#{position,jdbcType=VARCHAR},</if>
+			<if test="specialty != null">#{specialty,jdbcType=VARCHAR},</if>
+			<if test="professionalTitle != null">#{professionalTitle,jdbcType=VARCHAR},</if>
+			<if test="researchResult != null">#{researchResult,jdbcType=LONGVARCHAR},</if>
+			<if test="trainExperience != null">#{trainExperience,jdbcType=LONGVARCHAR},</if>
+			<if test="contributeResource != null">#{contributeResource,jdbcType=LONGVARCHAR},</if>
+			<if test="creator != null and creator.id != null">#{creator.id,jdbcType=VARCHAR},</if>
+			<if test="createTime != null">#{createTime,jdbcType=BIGINT},</if>
+			<if test="version != null">#{version,jdbcType=DECIMAL},</if>
+			<if test="isDeleted != null">#{isDeleted,jdbcType=VARCHAR},</if>
+		</trim>
+	</insert>
+	
+	<update id="updateByPrimaryKey" parameterType="com.haoyu.expert.entity.Expert">
+	    update EXPERT
+	    <set>
+			<if test="position != null and position != '' ">
+			    POSITION = #{position,jdbcType=VARCHAR},
+		   	</if>
+			<if test="specialty != null and specialty != '' ">
+			    SPECIALTY = #{specialty,jdbcType=VARCHAR},
+		    </if>
+			<if test="professionalTitle != null and professionalTitle != '' ">
+			    PROFESSIONAL_TITLE = #{professionalTitle,jdbcType=VARCHAR},
+		    </if>
+			<if test="researchResult != null and researchResult != '' ">
+			    RESEARCH_RESULT = #{researchResult,jdbcType=VARCHAR},
+		    </if>
+			<if test="trainExperience != null and trainExperience != '' ">
+			    TRAIN_EXPERIENCE = #{trainExperience,jdbcType=VARCHAR},
+		    </if>
+			<if test="contributeResource != null and contributeResource != '' ">
+			    CONTRIBUTE_RESOURCE = #{contributeResource,jdbcType=VARCHAR},
+		    </if>
+		    <if test="updatedby != null and updatedby.id != null and updatedby.id != ''">
+				UPDATEDBY = #{updatedby.id,jdbcType=VARCHAR}
+			</if>
+		</set>
+		where ID = #{id,jdbcType=VARCHAR}
+	</update>
+	
+	<update id="deleteByLogic" parameterType="com.haoyu.expert.entity.Expert">
+	    update EXPERT
+		set IS_DELETED = 'Y', UPDATE_TIME = #{updateTime,jdbcType=DECIMAL}
+		<if test="updatedby != null and updatedby.id != null and updatedby.id != ''">
+			,UPDATEDBY = #{updatedby.id,jdbcType=VARCHAR}
+		</if>
+		,VERSION = VERSION + 1
+		where ID = #{id,jdbcType=VARCHAR}
+	</update>
+	
+</mapper>

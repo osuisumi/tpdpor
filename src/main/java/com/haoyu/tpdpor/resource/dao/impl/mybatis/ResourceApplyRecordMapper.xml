@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.haoyu.tpdpor.resource.dao.impl.mybatis.ResourceApplyRecordMapper">
+	<resultMap id="BaseResultMap" type="com.haoyu.tpdpor.resource.entity.ResourceApplyRecord">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="RESOURCE_ID" property="resource.id" jdbcType="VARCHAR"/>
+		<result column="APPLY_STATE" property="applyState" jdbcType="VARCHAR"/>
+		<result column="USER_ID" property="userInfo.id" jdbcType="VARCHAR"/>
+		<result column="CREATOR" property="creator.id" jdbcType="VARCHAR"/>
+		<result column="CREATE_TIME" property="createTime" jdbcType="VARCHAR"/>
+		<result column="RELATION_ID" property="relation.id" jdbcType="VARCHAR"/>
+		<association property="resource" javaType="com.haoyu.tip.resource.entity.Resources">
+			<id column="RESOURCE_ID" property="id" jdbcType="VARCHAR"/>
+			<result column="TITLE" property="title" jdbcType="VARCHAR"/>
+			<result column="TYPE" property="type" jdbcType="VARCHAR" />
+			<association property="resourceExtend" javaType="com.haoyu.tip.resource.entity.ResourceExtend">
+				<result column="RESOURCE_ID" property="resourceId" jdbcType="VARCHAR"/>
+				<result column="EXTEND_TYPE" property="type" jdbcType="VARCHAR"/>
+			</association>
+		</association>
+		<association property="userInfo" javaType="com.haoyu.sip.user.entity.UserInfo">
+			<id column="USER_ID" property="id" jdbcType="VARCHAR" />
+			<result column="REAL_NAME" property="realName" jdbcType="VARCHAR"/>
+			<result column="DEPT_NAME" property="department.deptName" jdbcType="VARCHAR"/>
+		</association>
+	</resultMap>
+	
+	<resultMap type="com.haoyu.tpdpor.resource.entity.ResourceApplyRecordStateCount" id="StateCountMap">
+		<result column="APPLY_STATE" property="applyState" jdbcType="VARCHAR"/>
+		<result column="NUM" property="num" jdbcType="DECIMAL"/>
+	</resultMap>
+	
+	<sql id="Base_Column_List">
+			RRR.ID,RRR.RESOURCE_ID,RRR.APPLY_STATE,RRR.USER_ID,RRR.CREATE_TIME,RRR.CREATOR
+	</sql>
+	
+	<select id="selectByPrimaryKey" resultMap="BaseResultMap" parameterType="java.lang.String">
+		select	<include refid="Base_Column_List" />
+		from RESOURCE_APPLY_RECORD RRR
+		where RRR.IS_DELETED = 'N'
+		and RRR.ID = #{id,jdbcType=VARCHAR}
+	</select>
+	
+	<select id="selectByParameter" parameterType="java.util.Map" resultMap="BaseResultMap">
+		select RRR.ID,RRR.RESOURCE_ID,RRR.APPLY_STATE,RRR.USER_ID,RRR.CREATE_TIME,RRR.CREATOR,RRR.RELATION_ID
+		,R.TITLE,R.TYPE
+		,RE.TYPE EXTEND_TYPE
+		,BUV.REAL_NAME,BUV.DEPT_NAME
+		from RESOURCE_APPLY_RECORD RRR
+		join RESOURCES R on RRR.RESOURCE_ID = R.ID and R.IS_DELETED = 'N'
+		join RESOURCE_EXTEND RE on RRR.RESOURCE_ID = RE.RESOURCE_ID
+		join BASE_USER_VIEW BUV on BUV.ID = RRR.USER_ID
+		where RRR.IS_DELETED = 'N'
+		<if test="applyState != null and applyState != ''">
+			and	RRR.APPLY_STATE = #{applyState,jdbcType=VARCHAR}
+		</if>
+		<if test="createTimeGT">
+			and RRR.CREATE_TIME <![CDATA[>=]]> #{createTimeGT,jdbcType=DECIMAL}
+		</if>
+		<if test="createTimeLT">
+			and RRR.CREATE_TIME <![CDATA[<=]]> #{createTimeLT,jdbcType=DECIMAL}
+		</if>
+		<if test="deptId != null and deptId != ''">
+			and BUV.DEPT_ID = #{deptId,jdbcType=VARCHAR}
+		</if>
+		<if test="resourceIds != null and resourceIds.size >0 ">
+			and RRR.RESOURCE_ID in
+		    <foreach collection="resourceIds" open="(" close=")" item="resourceId" separator=",">
+				#{resourceId}
+			</foreach>
+		</if>
+		<if test="userId != null and userId != ''">
+		    and RRR.USER_ID = #{userId,jdbcType=VARCHAR}
+		</if>
+		<if test="resourceType != null and resourceType != ''">
+			and R.TYPE = #{resourceType,jdbcType=VARCHAR}
+		</if>
+	</select>
+	
+	<select id="selectStateCount" resultMap="StateCountMap" parameterType="map">
+		select RRR.APPLY_STATE,count(RRR.ID) NUM from
+		RESOURCE_APPLY_RECORD RRR
+		<if test="resourceType != null and resourceType != ''">
+			join RESOURCES R on RRR.RESOURCE_ID = R.ID and R.IS_DELETED = 'N'
+		</if>
+		where RRR.IS_DELETED = 'N'
+		<if test="userId != null and userId != ''">
+			and RRR.USER_ID = #{userId,jdbcType=VARCHAR}
+		</if>
+		<if test="resourceType != null and resourceType != ''">
+			and R.TYPE = #{resourceType,jdbcType=VARCHAR}
+		</if>
+		group by RRR.APPLY_STATE
+	</select>
+	
+	<insert id="insert" parameterType="com.haoyu.tpdpor.resource.entity.ResourceApplyRecord">
+		insert into RESOURCE_APPLY_RECORD
+		<trim prefix="(" suffix=")" suffixOverrides=",">
+			<if test="id != null">ID,</if>
+			<if test="resource != null and resource.id != null">RESOURCE_ID,</if>
+			<if test="applyState != null">APPLY_STATE,</if>
+			<if test="userInfo != null and userInfo.id != null">USER_ID,</if>
+			<if test="creator != null and creator.id != null">CREATOR,</if>
+			<if test="createTime != null">CREATE_TIME,</if>
+			<if test="version != null">VERSION,</if>
+			<if test="isDeleted != null">IS_DELETED,</if>
+			<if test="relation != null and relation.id != null and relation.id != '' ">RELATION_ID,</if>
+		</trim>
+		<trim prefix="values (" suffix=")" suffixOverrides=",">
+			<if test="id != null">#{id,jdbcType=VARCHAR},</if>
+			<if test="resource != null and resource.id != null">#{resource.id,jdbcType=VARCHAR},</if>
+			<if test="applyState != null">#{applyState,jdbcType=VARCHAR},</if>
+			<if test="userInfo != null and userInfo.id != null">#{userInfo.id,jdbcType=VARCHAR},</if>
+			<if test="creator != null and creator.id != null">#{creator.id,jdbcType=VARCHAR},</if>
+			<if test="createTime != null">#{createTime,jdbcType=VARCHAR},</if>
+			<if test="version != null">#{version,jdbcType=DECIMAL},</if>
+			<if test="isDeleted != null">#{isDeleted,jdbcType=VARCHAR},</if>
+			<if test="relation != null and relation.id != null and relation.id != '' ">#{relation.id,jdbcType=VARCHAR},</if>
+		</trim>
+	</insert>
+	<update id="updateByPrimaryKey" parameterType="com.haoyu.tpdpor.resource.entity.ResourceApplyRecord">
+		update RESOURCE_APPLY_RECORD
+		<set>
+			<if test="entity != null">
+				<if test="entity.applyState != null">
+					APPLY_STATE = #{entity.applyState,jdbcType=VARCHAR},
+				</if>
+				<if test="entity.updatedby != null and entity.updatedby.id  != null">
+					UPDATEDBY = #{entity.updatedby.id,jdbcType=VARCHAR},
+				</if>
+				<if test="entity.updateTime  != null">
+					UPDATE_TIME = #{entity.updateTime,jdbcType=DECIMAL},
+				</if>
+			</if>
+			VERSION = VERSION+1
+		</set>
+		where ID in
+		<foreach collection="ids" open="(" close=")" item="item" separator=",">
+			#{item,jdbcType=VARCHAR}
+		</foreach>
+	</update>
+	<delete id="deleteByPhysics" parameterType="com.haoyu.tpdpor.resource.entity.ResourceApplyRecord">
+		delete from RESOURCE_APPLY_RECORD
+		where id = #{id,jdbcType=VARCHAR}
+	</delete>
+</mapper>

@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.haoyu.tpdpor.trainresource.dao.impl.mybatis.TrainResourceUserMapper">
+	<resultMap id="BaseResultMap" type="com.haoyu.tpdpor.trainresource.entity.TrainResourceUser">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="USER_ID" property="user.id" jdbcType="VARCHAR"/>
+		<result column="TRAIN_ID" property="trainResource.train.id" jdbcType="VARCHAR"/>
+		<result column="TRAIN_NAME" property="trainResource.train.name" jdbcType="VARCHAR"/>
+		<result column="RESOURCE_ID" property="trainResource.resource.id" jdbcType="VARCHAR"/>
+		<result column="RESOURCE_TYPE" property="trainResource.resource.type" jdbcType="VARCHAR"/>
+		<result column="RESOURCE_TITLE" property="trainResource.resource.title" jdbcType="VARCHAR"/>
+		<result column="DIVISION_NAME" property="trainResource.division.name" jdbcType="VARCHAR"/>
+		<result column="STATE" property="state" jdbcType="VARCHAR"/>
+		<result column="APPLY_REAL_NAME" property="user.realName" jdbcType="VARCHAR"/>
+		<result column="CREATE_TIME" property="createTime" jdbcType="INTEGER" />
+		
+	</resultMap>
+	
+	<select id="selectByParameter" resultMap="BaseResultMap" parameterType="java.util.Map">
+		select
+			RAD.ID ID,
+			RAD.USER_ID USER_ID,
+			RAD.RESOURCE_ID RESOURCE_ID,
+			RAD.APPLY_STATE STATE,
+			RAD.CREATE_TIME CREATE_TIME,
+			R.TYPE RESOURCE_TYPE,
+			R.TITLE RESOURCE_TITLE,
+			D.NAME DIVISION_NAME,
+			BUV.REAL_NAME APPLY_REAL_NAME
+		from
+			RESOURCE_APPLY_RECORD RAD
+		inner join RESOURCES R on R.IS_DELETED = 'N' and RAD.RESOURCE_ID = R.ID and R.TYPE != 'teach'
+		inner join BASE_USER_VIEW BUV on BUV.ID = RAD.USER_ID
+		left join DIVISION D on D.IS_DELETED = 'N' and D.ID = R.BELONG
+		where
+			RAD.IS_DELETED = 'N'
+		<if test="state != null and state != '' ">
+		    and RAD.APPLY_STATE = #{state,jdbcType=VARCHAR}
+		</if> 
+	    <if test="resourceName != null and resourceName != '' ">
+		    and R.TITLE like '%${resourceName}%' 
+		</if>
+		<if test="belongs != null and belongs.size > 0 ">
+		    and R.BELONG in
+		    <foreach collection="belongs" open="(" close=")" item="item" separator=",">
+		  		#{item,jdbcType=VARCHAR}  	
+		  	</foreach> 
+		</if>
+		<if test="belong != null and belong != '' ">
+		    and R.BELONG = #{belong,jdbcType=VARCHAR}
+		</if>
+	</select>
+	
+	<select id="selectByPrimaryKey" resultMap="BaseResultMap" parameterType="java.lang.String">
+	    select
+	    	RAD.ID ID,
+			RAD.USER_ID USER_ID,
+			RAD.RESOURCE_ID RESOURCE_ID,
+			RAD.APPLY_STATE STATE,
+			RAD.CREATE_TIME CREATE_TIME,
+			R.TYPE RESOURCE_TYPE,
+			R.TITLE RESOURCE_TITLE,
+			BUV.REAL_NAME APPLY_REAL_NAME,
+			BUV.PAPERWORK_NO PAPERWORK_NO
+		from
+			RESOURCE_APPLY_RECORD RAD
+		inner join RESOURCES R on R.IS_DELETED = 'N' and RAD.RESOURCE_ID = R.ID
+		inner join BASE_USER_VIEW BUV on BUV.ID = RAD.USER_ID
+		where
+			RAD.IS_DELETED = 'N' and RAD.ID = #{id,jdbcType=VARCHAR} 
+	</select>
+</mapper>

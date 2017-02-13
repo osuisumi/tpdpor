@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.haoyu.tpdpor.resource.dao.impl.mybatis.ResourceWsMapper">
+	<resultMap id="ResourceResultMap" type="com.haoyu.tpdpor.resource.entity.ResourceWs">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="TITLE" property="title" jdbcType="VARCHAR" />
+		<result column="CREATE_TIME" property="createTime" jdbcType="INTEGER" />
+		<result column="CREATOR" property="creatorId" jdbcType="VARCHAR" />
+		<result column="REAL_NAME" property="creatorName" jdbcType="VARCHAR" />
+		<result column="IS_DELETED" property="isDeleted" jdbcType="VARCHAR"/>	
+	</resultMap>
+	
+	<select id="count" parameterType="map" resultType="int">
+		select count(ID) from RESOURCES R
+	</select>
+	
+	
+	<select id="select" parameterType="map" resultMap="ResourceResultMap">
+		select
+			R.ID,
+			R.TITLE,
+			R.SUMMARY,
+			R.CREATOR,
+			R.TYPE,
+			R.CREATE_TIME,
+			R.BELONG,
+			R.PRIVILEGE,
+			R.IS_DELETED,
+			BUV.REAL_NAME
+		from
+			RESOURCES R
+		left join BASE_USER_VIEW BUV on BUV.ID = R.CREATOR
+		<where>
+		<if test="state!=null and state!=''">
+			and R.STATE=#{state,jdbcType=VARCHAR}
+		</if>
+		<if test="title!=null and title!=''">
+			and R.TITLE like '%${title}%'
+		</if>
+		<if test="relationType!=null and relationType!=''">
+			and RR.TYPE=#{relationType,jdbcType=VARCHAR}
+		</if>
+		<if test="subject !=null and subject != ''">
+			and RE.SUBJECT=#{subject}
+		</if>
+		<if test="stage != null and stage != ''">
+			and RE.STAGE=#{stage}
+		</if>
+		<if test="grade != null and grade != ''">
+			and RE.GRADE = #{grade}
+		</if>
+		<if test="resourceExtendType != null and resourceExtendType != ''">
+			and RE.TYPE = #{resourceExtendType,jdbcType=VARCHAR}			
+		</if>
+		<if test="version != null and version != ''">
+			and RE.TB_VERSION = #{version,jdbcType=VARCHAR}
+		</if>
+		<if test="section !=null and section != ''">
+			and RE.SECTION like concat(#{section,jdbcType=VARCHAR},'%')
+		</if>
+		<if test="bIndex != null and bIndex != ''">
+			and RE.B_INDEX like concat(#{bIndex,jdbcType=VARCHAR},'%')
+		</if>
+		<if test="relationTypes != null and relationTypes.size > 0">
+			and RR.TYPE in 
+			<foreach collection="relationTypes" open="(" close=")" item="item" separator=",">
+				#{item}
+			</foreach>
+		</if>
+		<if test="type!=null and type != ''">
+			and R.TYPE=#{type,jdbcType=VARCHAR}
+		</if>
+		<if test="creator!=null and creator!=''">
+			and R.CREATOR=#{creator,jdbcType=VARCHAR}
+		</if>
+		<if test="belong != null and belong != ''">
+			and R.BELONG=#{belong,jdbcType=VARCHAR}
+		</if>
+		<if test="notExistsRelationType != null and notExistsRelationType != '' and notExistsRelationId != null and notExistsRelationId != ''">
+			and not exists (select 1 from RESOURCE_RELATION where RESOURCE_ID = R.ID and IS_DELETED = 'N' and RELATION_ID = #{notExistsRelationId} and type = #{notExistsRelationType} )
+		</if>
+		<if test="ids != null">
+			and R.ID in 
+			<foreach collection="ids" open="(" close=")" separator="," item="id">
+				#{id,jdbcType=VARCHAR}
+			</foreach>
+		</if>
+		<if test="privilege != null and privilege != ''">
+			and R.PRIVILEGE=#{privilege,jdbcType=VARCHAR}
+		</if>
+		<if test="relationIds != null and relationIds.size > 0">
+			and exists (select 1 from RESOURCE_RELATION where RESOURCE_ID = R.ID
+			and RELATION_ID in 
+			<foreach collection="relationIds" open="(" close=")" item="item" separator=",">
+				#{item}
+			</foreach>)
+		</if>
+		<if test="relationId !=null and relationId != '' ">
+			and RR.RELATION_ID = #{relationId,jdbcType=VARCHAR}
+		</if>
+		<if test="followCreator != null and followCreator!=''">
+			and exists (select 1 from FOLLOW F where IS_DELETED = 'N' and FOLLOWED_ID = R.ID and CREATOR = #{followCreator})
+		</if>
+		<if test="creatorOrFollowCreator != null and creatorOrFollowCreator!=''">
+			and (R.CREATOR = #{creatorOrFollowCreator} or exists (select 1 from FOLLOW F where IS_DELETED = 'N' and FOLLOWED_ID = R.ID and F.CREATOR = #{creatorOrFollowCreator}))
+		</if>
+		<if test="applyUser != null and applyUser != ''">
+			and exists (select 1 from RESOURCE_APPLY_RECORD where IS_DELETED = 'N' and RESOURCE_ID = R.ID and USER_ID = #{applyUser})
+		</if>
+		<if test="applyUserOrFollowCreator != null and applyUserOrFollowCreator != ''">
+			and (exists (select 1 from RESOURCE_APPLY_RECORD where IS_DELETED = 'N' and RESOURCE_ID = R.ID and USER_ID = #{applyUserOrFollowCreator}) or exists (select 1 from FOLLOW F where IS_DELETED = 'N' and FOLLOWED_ID = R.ID and F.CREATOR = #{applyUserOrFollowCreator}))
+		</if>
+		<if test="subscribe != null and subscribe != ''">
+			and (exists (select 1 from FOLLOW F where F.CREATOR = #{subscribeCreator,jdbcType=VARCHAR}  and F.FOLLOWED_ID = R.CREATOR and exists(select 1 from EXPERT E where E.IS_DELETED = 'N' and E.USER_ID = F.FOLLOWED_ID) and F.FOLLOWED_TYPE = 'expert') or exists(select 1 from FOLLOW F where F.CREATOR = #{subscribeCreator,jdbcType=VARCHAR} and  F.FOLLOWED_ID = R.BELONG and exists(select 1 from DIVISION D where D.IS_DELETED = 'N' and D.ID = F.FOLLOWED_ID) and F.FOLLOWED_TYPE = 'division'))
+		</if>
+		</where>
+	</select>
+</mapper>

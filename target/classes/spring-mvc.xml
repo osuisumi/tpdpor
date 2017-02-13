@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:mvc="http://www.springframework.org/schema/mvc" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:p="http://www.springframework.org/schema/p" xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans 
+http://www.springframework.org/schema/beans/spring-beans.xsd
+http://www.springframework.org/schema/context 
+http://www.springframework.org/schema/context/spring-context.xsd 
+http://www.springframework.org/schema/mvc 
+http://www.springframework.org/schema/mvc/spring-mvc.xsd">
+
+	<mvc:resources mapping="/js/**" location="/js/" /> 
+ 	<mvc:resources mapping="/css/**" location="/css/" /> 
+ 	<mvc:resources mapping="/images/**" location="/images/" /> 
+ 	<mvc:resources mapping="/*.png" location="/*.png" /> 
+ 	<mvc:resources mapping="/library/**" location="/library/" />
+	<mvc:default-servlet-handler/>
+
+	<mvc:annotation-driven />
+	<context:component-scan base-package="com.haoyu.**.controller" />
+	<context:component-scan base-package="com.haoyu.**.web" />
+	
+	<context:property-placeholder location="classpath:custom.properties"/>
+	
+	<!-- 初始化template -->
+	<context:component-scan base-package="com.haoyu.**.template" />
+	<bean id="freemarkerVariablesFactory" class="com.haoyu.tpdpor.freemaker.util.FreemarkerVariablesFactory" >
+	</bean>
+	
+	<mvc:interceptors>
+		<mvc:interceptor>
+			<mvc:mapping path="/**" />
+			<bean class="com.haoyu.sip.core.interceptor.RequestAttributeInterceptor"
+				autowire-candidate="true" />
+		</mvc:interceptor>
+		<mvc:interceptor>
+			<mvc:mapping path="/**" />
+			<bean class="com.haoyu.sip.auth.interceptor.MenuTreeParameterInterceptor"
+				autowire-candidate="true" />
+		</mvc:interceptor>
+		<mvc:interceptor>
+			<mvc:mapping path="/**" />
+			<bean class="com.github.miemiedev.mybatis.paginator.springmvc.PageListAttrHandlerInterceptor" autowire-candidate="true"/>
+		</mvc:interceptor>
+	</mvc:interceptors>
+	<!-- 对模型视图名称的解析，即在模型视图名称添加前后缀 -->
+	<bean
+		class="org.springframework.web.servlet.view.InternalResourceViewResolver"
+		p:prefix="/WEB-INF/views/" p:suffix=".jsp" p:order="1" />
+	<!-- FreeMarker视图解析 -->
+	<bean id="freeMarkerViewResolver"
+		class="org.springframework.web.servlet.view.freemarker.FreeMarkerViewResolver">
+		<property name="cache" value="true" />
+		<property name="contentType" value="text/html;charset=UTF-8"></property>
+		<!-- <property name="prefix" value="/WEB-INF/templates/"/> -->
+		<property name="suffix" value=".ftl" />
+		<property name="order" value="0" />
+		<property name="requestContextAttribute" value="request" />
+		<property name="attributesMap" ref="freemarkerStaticModels"/>
+	</bean>
+	<bean id="multipartResolver"
+		class="org.springframework.web.multipart.commons.CommonsMultipartResolver"
+		p:defaultEncoding="UTF-8" p:maxUploadSize="1048576000" p:uploadTempDir="upload/temp/" />
+	<bean id="freemarkerConfigurer"
+		class="com.haoyu.tpdpor.freemaker.util.MyFreeMakerConfigurer">
+		<property name="templateLoaderPath" value="WEB-INF/views" />
+		<property name="defaultEncoding" value="UTF-8" />
+		<property name="freemarkerSettings">
+			<props>
+				<prop key="template_update_delay">10</prop>
+				<!-- <prop key="locale">zh_CN</prop> -->
+				<prop key="datetime_format">yyyy-MM-dd HH:mm:ss</prop>
+				<prop key="date_format">yyyy-MM-dd</prop>
+				<prop key="number_format">#.##</prop>
+				<prop key="classic_compatible">true</prop> 
+				<!-- <prop key="auto_import">/ftl/common/macros.ftl as html</prop> <prop 
+					key="tag_syntax">auto_detect</prop> -->
+			</props>
+		</property>
+		<property name="freemarkerVariablesFactory" ref="freemarkerVariablesFactory" />
+		<property name="freemarkerVariables">
+			<map>
+				<entry key="ctx" value="" />
+				<entry key="app_path" value="${app.path}" />
+			</map>
+		</property>
+	</bean>
+	
+
+	<bean id="freemarkerStaticModelsProps"
+		class="org.springframework.beans.factory.config.PropertiesFactoryBean">
+		<property name="location" value="classpath:freemarkerstatic.properties" />
+	</bean>
+
+	<bean id="freemarkerStaticModels" class="com.haoyu.sip.core.freemarker.FreemarkerStaticModels"
+		factory-method="getInstance">
+		<property name="staticModels" ref="freemarkerStaticModelsProps" />
+	</bean>
+</beans>

@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.haoyu.tpdpor.statistics.dao.impl.mybatis.ResourceStatisticsMapper">
+	<resultMap id="BaseResultMap" type="com.haoyu.tpdpor.statistics.entity.ResourceStatistics">
+		<result column="REGION_CODE" property="region.regionsCode" jdbcType="VARCHAR"/>
+		<result column="REGION_NAME" property="region.regionsName" jdbcType="VARCHAR"/>
+		<result column="RESOURCE_NUM" property="resourceNum" jdbcType="INTEGER" />
+		<result column="DOWNLOAD_NUM" property="downloadNum" jdbcType="INTEGER" />
+		<result column="USER_NUM" property="userNum" jdbcType="INTEGER" />
+	</resultMap>
+	
+	<select id="selectByParameter" parameterType="java.util.Map" resultMap="BaseResultMap">
+		select
+			DISTINCT VR.REGIONS_CODE REGION_CODE,
+			VR.REGIONS_NAME REGION_NAME,
+			(
+				select
+					count (R.ID)
+				from
+					RESOURCES R
+				join BASE_USER_VIEW BUV on R.CREATOR = BUV.ID
+				join DEPT_REGIONS DR on BUV.DEPT_ID = DR.DEPT_ID
+				where
+					R.IS_DELETED = 'N'
+					and (
+						DR.COUNTIES = VR.REGIONS_CODE
+						OR DR.PROVINCE = VR.REGIONS_CODE
+						OR DR.CITY = VR.REGIONS_CODE
+					)
+			) RESOURCE_NUM,
+			(
+				select
+					count(FDU.ID)
+				from 
+					FILE_DOWNLOAD_USER FDU
+				join BASE_USER_VIEW BUV on BUV.ID = FDU.CREATOR
+				join DEPT_REGIONS DR on BUV.DEPT_ID = DR.DEPT_ID
+				where 
+					(
+						DR.COUNTIES = VR.REGIONS_CODE
+						OR DR.PROVINCE = VR.REGIONS_CODE
+						OR DR.CITY = VR.REGIONS_CODE
+					)
+			) download_num,
+			(
+				select 
+					count(ID) 
+				from 
+					BASE_USER_VIEW BUV
+				join DEPT_REGIONS DR on DR.DEPT_ID = BUV.DEPT_ID
+				where 
+					(
+						DR.COUNTIES = VR.REGIONS_CODE
+						OR DR.PROVINCE = VR.REGIONS_CODE
+						OR DR.CITY = VR.REGIONS_CODE
+					)
+			) USER_NUM
+		from
+			VIEW_REGIONS VR
+		left join DEPT_REGIONS DRS on DRS.CITY = VR.REGIONS_CODE
+	</select>
+	
+</mapper>

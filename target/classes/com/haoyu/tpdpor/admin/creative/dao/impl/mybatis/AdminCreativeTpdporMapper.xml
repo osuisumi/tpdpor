@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.haoyu.tpdpor.admin.creative.dao.impl.mybatis.AdminCreativeTpdporMapper">
+    
+	<resultMap id="CreativeTypeParamMap" type="com.haoyu.tpdpor.admin.creative.entity.CreativeTypeParam">
+		<result column="TYPE" property="type" jdbcType="VARCHAR" />
+		<result column="CREATIVE_NUM" property="creativeNum" jdbcType="INTEGER" />
+		<result column="RESORCE_NUM" property="resorceNum" jdbcType="INTEGER" />
+		<result column="MANAGER_ID" property="manager.id" jdbcType="VARCHAR" />
+		<result column="MANAGER_REALNAME" property="manager.realName" jdbcType="VARCHAR" />
+		<result column="EXPERT_ID" property="expert.id" jdbcType="VARCHAR" />
+		<result column="EXPERT_REALNAME" property="expert.realName" jdbcType="VARCHAR" />
+	</resultMap>
+	
+	<select id="selectCreativeTypeParamsByParameter" parameterType="java.util.Map" resultMap="CreativeTypeParamMap">
+		select
+			C.TYPE,
+			COUNT(C.ID) CREATIVE_NUM,
+			COUNT(R.ID) RESORCE_NUM,
+			BUV.ID	MANAGER_ID,
+			BUV.REAL_NAME MANAGER_REALNAME,
+			BUV1.ID	EXPERT_ID,
+			BUV1.REAL_NAME EXPERT_REALNAME
+		from
+			CREATIVE C
+		left join RESOURCE_RELATION RRN on RRN.IS_DELETED = 'N' and RRN.RELATION_ID = C.ID 
+		left join RESOURCES R on R.IS_DELETED = 'N' and R.ID = RRN.RESOURCE_ID
+		left join CREATIVE_USER CUR on CUR.IS_DELETED = 'N' and CUR.CREATIVE_ID = C.TYPE and CUR.ROLE = 'manager'
+		left join base_user_view buv on cur.user_id = buv.id
+		left join CREATIVE_USER CUR1 on CUR1.IS_DELETED = 'N' and CUR1.CREATIVE_ID = C.TYPE and CUR1.ROLE = 'expert'
+		left join BASE_USER_VIEW BUV1 on CUR1.USER_ID = BUV1.ID
+		group by 
+			C.TYPE,BUV.ID,BUV.REAL_NAME,BUV1.ID,BUV1.REAL_NAME
+			
+	</select>
+    
+</mapper>
